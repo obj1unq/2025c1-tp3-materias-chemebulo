@@ -8,7 +8,9 @@ object sistemaDeInscripcion {
 
     method aprobar(materia, nota, alumno){
         self.validarSiAproboMateria(materia, alumno)
+
         const nuevaCursada = new Cursada(materia = materia, nota = nota)
+
         alumno.cursadas().add(nuevaCursada)
     }
 
@@ -20,7 +22,9 @@ object sistemaDeInscripcion {
 
     method nota(materia, alumno) {
         self.validarSiNoAproboMateria(materia, alumno)
+
         const materiaABuscar = alumno.cursadas().find({cursada => cursada.materia() == materia})
+
         return materiaABuscar.nota()
     }
 
@@ -28,6 +32,7 @@ object sistemaDeInscripcion {
 
     method inscribirAMateria(materia, alumno) {
         self.validarSiPuedeInscribirseEnMateria(materia, alumno)
+
         materia.inscribirSiHayCupo(alumno)
     }
 
@@ -52,17 +57,32 @@ object sistemaDeInscripcion {
 
     method materiasInscriptas(alumno) {
         const todasLasMaterias = self.materiasDeCarrerasInscriptas(alumno)
+
         return todasLasMaterias.filter({materia => materia.alumnosConfirmados().contains(alumno)})
     }
 
     method materiasEnEspera(alumno) {
         const todasLasMaterias = self.materiasDeCarrerasInscriptas(alumno)
+
         return todasLasMaterias.filter({materia => materia.listaDeEspera().contains(alumno)})
     }
 
     method materiasALaQueSePuedeInscribir(alumno) {
         const todasLasMaterias = self.materiasDeCarrerasInscriptas(alumno)
+
         return todasLasMaterias.filter({materia => self.puedeInscribirseA(materia, alumno)})
+    }
+
+    method cantidadDeAprobadasEnCarrera(alumno, carrera) {
+        const materiasDeCarrera = carrera.materias()
+        const materiasAprobadasDeCarrera = materiasDeCarrera.filter({materia => self.aprobo(materia, alumno)})
+
+        return materiasAprobadasDeCarrera.size()
+    }
+
+    method materiasDelAñoEn(año, carrera) {
+        const materiasDeCarrera = carrera.materias()
+        return materiasDeCarrera.filter({materia => materia.año() == año})
     }
 
     // ###################################### INSCRIPCIÓN - CARRERAS #######################################
@@ -78,9 +98,8 @@ object sistemaDeInscripcion {
     method materiasDeCarrerasInscriptas(alumno) = self.materiasCarrerasDe(alumno).flatten()
 
     method materiasCarrerasDe(alumno) {
-        const carrerasInscriptas = alumno.carrerasInscriptas().copy()
-        // Mi idea fue no usar directamente la referencia de carrerasInscriptas porque sino me iba a modificar
-        // el contenido (lo cual entiendo que está mal en este contexto), y lo que se me ocurrió fue usar una copia.
+        const carrerasInscriptas = alumno.carrerasInscriptas()
+        
         return carrerasInscriptas.map({carrera => carrera.materias()})
     } 
 

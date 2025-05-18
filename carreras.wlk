@@ -1,5 +1,4 @@
 import inscripcionAMaterias.*
-import alumno.*
 import materias.*
 
 class Carrera {
@@ -23,3 +22,5 @@ object derecho inherits Carrera {
         return [latin, derechoRomano, historiaDeDerechoArgentino, derechoPenalI, derechoPenalII]
     }
 }
+
+object ninguna inherits Carrera {}

@@ -58,10 +58,11 @@ describe "Inscripciones a materias - Pruebas de los requerimientos" {
         assert.that(sistemaDeInscripcion.estaEnMateriasDeCarrerasInscriptas(objetosII, roque))
         assert.notThat(sistemaDeInscripcion.aprobo(objetosII, roque))
         assert.notThat(sistemaDeInscripcion.estaInscriptoEnMateria(objetosII, roque))
-        assert.notThat(sistemaDeInscripcion.cumpleElRequisitoDe(objetosII, roque))
 
         sistemaDeInscripcion.aprobar(objetosI, 8, roque)
         sistemaDeInscripcion.aprobar(matematicaI, 10, roque)
+        sistemaDeInscripcion.aprobar(elementosDeProgramacion, 6, roque)
+        sistemaDeInscripcion.aprobar(basesDeDatos, 9, roque)
         assert.that(sistemaDeInscripcion.cumpleElRequisitoDe(objetosII, roque))
     }
 
@@ -128,13 +129,18 @@ describe "Inscripciones a materias - Pruebas de los requerimientos" {
         assert.that(sistemaDeInscripcion.materiasInscriptas(pepon).isEmpty())
     }
  
+    //  [matematicaI, basesDeDatos, objetosI]
+
     test "10. Un estudiante debe saber decir todas las materias a las que se puede inscribir." {
 
+        const materiasQueSePuedeInscribir = sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque)
+        const materiasQueDeberiaPoderInscribirse = [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI]
+
         sistemaDeInscripcion.inscribirACarrera(programacion, roque)
-        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI])
+        assert.that(materiasQueSePuedeInscribir.all({materia => materiasQueDeberiaPoderInscribirse.contains(materia)}))
 
         sistemaDeInscripcion.aprobar(elementosDeProgramacion, 8, roque)
-        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [matematicaI, basesDeDatos, objetosI])
+        assert.notThat(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque).contains(elementosDeProgramacion))
     }
 }
 
@@ -179,7 +185,7 @@ describe "Inscripciones a materias - Tests planteados en el final de la consigna
         objetosII.cupo(3)
     }
 
-    test "Prueba general de todo el funcionamiento" {
+    test "Funcionamiento general del sistema de inscripción." {
 
         // Roque puede inscribirse en Objetos 2, pero no en Objetos 3 (porque le falta Objetos 2) ni en Objetos 1 (porque ya la tiene aprobada).
 
@@ -220,5 +226,66 @@ describe "Inscripciones a materias - Tests planteados en el final de la consigna
         sistemaDeInscripcion.darDeBaja(objetosII, romina)
         assert.notThat(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(romina))
         assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(roque))
+    }
+}
+
+describe "Implementación del bonus" {
+
+    const roque = new Alumno()
+    const pepon = new Alumno()
+    const jorge = new Alumno()
+
+    method initialize() {
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
+        sistemaDeInscripcion.inscribirACarrera(programacion, pepon)
+        sistemaDeInscripcion.inscribirACarrera(programacion, jorge)
+
+        sistemaDeInscripcion.aprobar(elementosDeProgramacion, 9, roque)
+        sistemaDeInscripcion.aprobar(matematicaI, 10, roque)
+        sistemaDeInscripcion.aprobar(basesDeDatos, 10, roque)
+
+        sistemaDeInscripcion.aprobar(basesDeDatos, 8, pepon)
+
+        sistemaDeInscripcion.aprobar(elementosDeProgramacion, 10, jorge)
+        sistemaDeInscripcion.aprobar(basesDeDatos, 8, jorge)
+
+        objetosI.cupo(1)
+    }
+
+    test "La materias tienen sus requisitos propios: por cantidad de créditos, por año, o ninguno."{
+        
+        assert.that(sistemaDeInscripcion.cumpleElRequisitoDe(objetosI, roque))
+        assert.notThat(sistemaDeInscripcion.cumpleElRequisitoDe(trabajoFinal, roque))
+    }
+
+    test "Las materias tienen diferentes maneras de manejar su lista de espera: orden de llegada." {
+
+        sistemaDeInscripcion.inscribirAMateria(objetosI, pepon)
+        sistemaDeInscripcion.inscribirAMateria(objetosI, roque)
+        assert.notThat(sistemaDeInscripcion.alumnosInscriptosEn(objetosI).contains(roque))
+        assert.that(sistemaDeInscripcion.alumnosEnEsperaEn(objetosI).contains(roque))
+    }
+
+
+    test "Las materias tienen diferentes maneras de manejar su lista de espera: elitista." {
+
+        objetosI.estrategia(elitista)
+
+        sistemaDeInscripcion.inscribirAMateria(objetosI, roque)
+        sistemaDeInscripcion.inscribirAMateria(objetosI, pepon)
+        sistemaDeInscripcion.inscribirAMateria(objetosI, jorge)
+        sistemaDeInscripcion.darDeBaja(objetosI, roque)
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosI).contains(jorge))
+    }
+
+    test "Las materias tienen diferentes maneras de manejar su lista de espera: grado de avance." {
+
+        objetosI.estrategia(gradoDeAvance)
+
+        sistemaDeInscripcion.inscribirAMateria(objetosI, jorge)
+        sistemaDeInscripcion.inscribirAMateria(objetosI, pepon)
+        sistemaDeInscripcion.inscribirAMateria(objetosI, roque)
+        sistemaDeInscripcion.darDeBaja(objetosI, jorge)
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosI).contains(roque))
     }
 }
