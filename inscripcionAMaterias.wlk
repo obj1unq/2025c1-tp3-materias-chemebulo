@@ -1,84 +1,86 @@
-class Alumno {
-    // ######################################## ALUMNO - ATRIBUTOS #########################################
+import alumno.*
+import carreras.*
+import materias.*
 
-    const cursadas = [] // La idea de cursadas es que almacene las materias que ya cursó y aprobó el Alumno, se que puede llegar a causar confusión el nombre pero no se me ocurrió uno mejor.
-    const carrerasInscriptas = []
-    const materiasInscriptas = []
+object sistemaDeInscripcion {
+    
+    // ###################################### INSCRIPCIÓN - MATERIAS ######################################
 
-    // ######################################### ALUMNO - MATERIAS #########################################
-
-    method aprobar(materia, nota){
-        self.validarSiAproboMateria(materia)
+    method aprobar(materia, nota, alumno){
+        self.validarSiAproboMateria(materia, alumno)
         const nuevaCursada = new Cursada(materia = materia, nota = nota)
-        cursadas.add(nuevaCursada)
+        alumno.cursadas().add(nuevaCursada)
     }
 
-    method materiasAprobadas() = cursadas.map({cursada => cursada.materia()})
+    method aprobo(materia, alumno) = self.materiasAprobadasDe(alumno).contains(materia)
 
-    method cantidadDeMateriasAprobadas() = self.materiasAprobadas().size()
+    method cantidadDeMateriasAprobadasDe(alumno) = self.materiasAprobadasDe(alumno).size()
 
-    method aprobo(materia) = self.materiasAprobadas().contains(materia)
+    method materiasAprobadasDe(alumno) = alumno.cursadas().map({cursada => cursada.materia()})
 
-    method nota(materia) {
-        self.validarSiNoAproboMateria(materia)
-        const materiaABuscar = cursadas.find({cursada => cursada.materia() == materia})
+    method nota(materia, alumno) {
+        self.validarSiNoAproboMateria(materia, alumno)
+        const materiaABuscar = alumno.cursadas().find({cursada => cursada.materia() == materia})
         return materiaABuscar.nota()
     }
 
-    method promedio() = cursadas.average({cursada => cursada.nota()})
+    method promedio(alumno) = alumno.cursadas().average({cursada => cursada.nota()})
 
-    method inscribirAMateria(materia) {
-        self.validarSiPuedeInscribirseEnMateria(materia)
+    method inscribirAMateria(materia, alumno) {
+        self.validarSiPuedeInscribirseEnMateria(materia, alumno)
         // INSCRIBIRLO
     }
 
-    method puedeInscribirseA(materia) {
-        return self.estaEnMateriasDeCarrerasInscriptas(materia)
-               and not self.aprobo(materia)
-               and not self.seInscribioAMateria(materia)
-               and self.tieneAprobadasLosRequisitoDe(materia)
+    method puedeInscribirseA(materia, alumno) {
+        return self.estaEnMateriasDeCarrerasInscriptas(materia, alumno)
+               and not self.aprobo(materia, alumno)
+               and not self.seInscribioAMateria(materia, alumno)
+               and self.tieneAprobadasLosRequisitoDe(materia, alumno)
                and materia.tieneCupo()
     }
 
-    method seInscribioAMateria(materia) = materiasInscriptas.contains(materia)
+    method seInscribioAMateria(materia, alumno) = alumno.materiasInscriptas().contains(materia)
 
-    method tieneAprobadasLosRequisitoDe(materia) {
-        const requisitosDeLaMateria = materia.requisitos()
-
-        return requisitosDeLaMateria.all({materiaRequisito => self.aprobo(materiaRequisito)})
-    } // REVISAR
-
-    // ######################################### ALUMNO - CARRERAS #########################################
-
-    method inscribirACarrera(carrera) {
-        carrerasInscriptas.add(carrera)
+    method tieneAprobadasLosRequisitoDe(materia, alumno) {
+        return materia.requisitos().all({materiaRequisito => self.aprobo(materiaRequisito, alumno)})
     }
 
-    method seInscribioACarrera(carrera) = carrerasInscriptas.contains(carrera)
+    // ###################################### INSCRIPCIÓN - CARRERAS #######################################
 
-    method estaEnMateriasDeCarrerasInscriptas(materia) = self.materiasDeCarrerasInscriptas().contains(materia)
+    method inscribirACarrera(carrera, alumno) {
+        alumno.carrerasInscriptas().add(carrera)
+    }
 
-    method materiasDeCarrerasInscriptas() = self.materiasDeInscriptas().flatten()
+    method seInscribioACarrera(carrera, alumno) = alumno.carrerasInscriptas().contains(carrera)
 
-    method materiasDeInscriptas() = carrerasInscriptas.map({carrera => carrera.materias()})
+    method estaEnMateriasDeCarrerasInscriptas(materia, alumno) = self.materiasDeCarrerasInscriptas(alumno).contains(materia)
 
-    // ####################################### ALUMNO - VALIDACIONES #######################################
+    method materiasDeCarrerasInscriptas(alumno) = self.materiasDeInscriptas(alumno).flatten()
 
-    method validarSiAproboMateria(materia) {
-        if(self.aprobo(materia)) {
-           self.error("La materia ya se encuentra registrada como aprobada.")
+    method materiasDeInscriptas(alumno) {
+        const carrerasInscriptas = alumno.carrerasInscriptas().copy()
+        // Mi idea fue no usar directamente la referencia de carrerasInscriptas porque sino me iba a modificar
+        // el contenido (lo cual entiendo que está mal en este contexto), y lo que se me ocurrió fue usar una copia.
+        return carrerasInscriptas.map({carrera => carrera.materias()})
+    } 
+
+    // ########################################### VALIDACIONES ############################################
+
+    method validarSiAproboMateria(materia, alumno) {
+        if(self.aprobo(materia, alumno)) {
+           self.error("El alumno ya tiene registrada como aprobada la materia dada.")
         }
     }
 
-    method validarSiNoAproboMateria(materia) {
-        if(not self.aprobo(materia)) {
-           self.error("La materia no se encuentra registrada como aprobada.")
+    method validarSiNoAproboMateria(materia, alumno) {
+        if(not self.aprobo(materia, alumno)) {
+           self.error("El alumno no tiene registrada como aprobada la materia dada.")
         }
     }
 
-    method validarSiPuedeInscribirseEnMateria(materia) {
-        if(not self.puedeInscribirseA(materia)) {
-            self.error("No se puede inscribir a esta materia, no se cumplen las condiciones.")
+    method validarSiPuedeInscribirseEnMateria(materia, alumno) {
+        if(not self.puedeInscribirseA(materia, alumno)) {
+            self.error("El alumno no se puede inscribir a esta materia, no cumple con las condiciones.")
         } 
     }
 }
@@ -89,213 +91,3 @@ class Cursada {
     var property materia
     var property nota
 }
-
-// ############################################### CARRERAS ################################################
-
-class Carrera {
-    var property materias = []
-}
-
-object programacion inherits Carrera {
-    override method materias(){
-        return [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI, objetosII, programacionConcurrente, trabajoFinal]
-    }
-}
-
-object medicina inherits Carrera {
-    override method materias(){
-        return [quimica, anatomiaGeneral, biologiaI, biologiaII]
-    }
-}
-
-object derecho inherits Carrera {
-    override method materias(){
-        return [latin, derechoRomano, historiaDeDerechoArgentino, derechoPenalI, derechoPenalII]
-    }
-}
-
-// ################################################ MATERIAS ###############################################
-
-class Materia {
-    var property requisitos = []
-    var alumnos = []
-    var property cupo = 20
-}
-
-// ####################################### MATERIAS DE PROGRAMACIÓN ########################################
-
-object elementosDeProgramacion inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object matematicaI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object basesDeDatos inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object objetosI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-} 
-
-object objetosII inherits Materia {
-    override method requisitos() =  [objetosI, matematicaI]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object objetosIII inherits Materia {
-    override method requisitos() = [objetosII, basesDeDatos]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object programacionConcurrente inherits Materia {
-    override method requisitos() = [objetosI, basesDeDatos]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object trabajoFinal inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-// ######################################### MATERIAS DE MEDICINA ##########################################
-
-object quimica inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object anatomiaGeneral inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object biologiaI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object biologiaII inherits Materia {
-    override method requisitos() = [biologiaI]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-// ########################################## MATERIAS DE DERECHO ##########################################
-
-object latin inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object derechoRomano inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-} 
-
-object historiaDeDerechoArgentino inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object derechoPenalI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-} 
-
-object derechoPenalII inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-// #########################################################################################################

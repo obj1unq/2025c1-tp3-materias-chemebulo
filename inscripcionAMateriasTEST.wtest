@@ -1,61 +1,64 @@
 import inscripcionAMaterias.*
+import alumno.*
+import carreras.*
+import materias.*
 
 describe "Inscripciones a materias - Pruebas de los requerimientos" {
 
     const roque = new Alumno()
     test "1. Registrar una materia aprobada por un estudiante indicando la nota obtenida." {
 
-        roque.aprobar(objetosI, 7)
-        assert.that(roque.aprobo(objetosI))
-        assert.equals(7, roque.nota(objetosI))
+        sistemaDeInscripcion.aprobar(objetosI, 7, roque)
+        assert.that(sistemaDeInscripcion.aprobo(objetosI, roque))
+        assert.equals(7, sistemaDeInscripcion.nota(objetosI, roque))
     }
 
     test "2. De un estudiante se debería saber la cantidad de materias aprobadas, su promedio, y si tiene o no aprobada una materia." {
 
-        assert.equals(0, roque.cantidadDeMateriasAprobadas())
-        roque.aprobar(objetosI, 8)
-        roque.aprobar(matematicaI, 6)
+        assert.equals(0, sistemaDeInscripcion.cantidadDeMateriasAprobadasDe(roque))
+        sistemaDeInscripcion.aprobar(objetosI, 8, roque)
+        sistemaDeInscripcion.aprobar(matematicaI, 6, roque)
 
-        assert.equals(2, roque.cantidadDeMateriasAprobadas())
-        assert.equals(7, roque.promedio())
+        assert.equals(2, sistemaDeInscripcion.cantidadDeMateriasAprobadasDe(roque))
+        assert.equals(7, sistemaDeInscripcion.promedio(roque))
 
-        assert.that(roque.aprobo(objetosI))
-        assert.notThat(roque.aprobo(objetosII))
+        assert.that(sistemaDeInscripcion.aprobo(objetosI, roque))
+        assert.notThat(sistemaDeInscripcion.aprobo(objetosII, roque))
     }
 
     test "3. Si el estudiante ya tiene registrada la aprobación de la materia, lanza un error." {
 
-        roque.aprobar(objetosI, 8)
-        assert.throwsException({ roque.aprobar(objetosI, 9) })
-        assert.doesNotThrowException({ roque.aprobar(matematicaI, 10) })
+        sistemaDeInscripcion.aprobar(objetosI, 8, roque)
+        assert.throwsException({ sistemaDeInscripcion.aprobar(objetosI, 9, roque) })
+        assert.doesNotThrowException({ sistemaDeInscripcion.aprobar(matematicaI, 10, roque) })
     }
 
     test "4. De un estudiante se debería saber la colección de materias de todas las carreras a las que está inscripto." {
         const materiasDeProgramacionYMedicina = programacion.materias() + medicina.materias()
 
-        roque.inscribirACarrera(programacion)
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
 
-        assert.that(roque.seInscribioACarrera(programacion))
-        assert.that(roque.materiasDeCarrerasInscriptas() == programacion.materias())
+        assert.that(sistemaDeInscripcion.seInscribioACarrera(programacion, roque))
+        assert.that(sistemaDeInscripcion.materiasDeCarrerasInscriptas(roque) == programacion.materias())
 
-        roque.inscribirACarrera(medicina)
+        sistemaDeInscripcion.inscribirACarrera(medicina, roque)
 
-        assert.that(roque.seInscribioACarrera(medicina))
-        assert.that(roque.materiasDeCarrerasInscriptas() == materiasDeProgramacionYMedicina)
+        assert.that(sistemaDeInscripcion.seInscribioACarrera(medicina, roque))
+        assert.that(sistemaDeInscripcion.materiasDeCarrerasInscriptas(roque) == materiasDeProgramacionYMedicina)
     }
 
     test "5. Un estudiante debería poder inscribirse a una materia en base a las cuatro condiciones planteadas en la consigna." {
 
-        assert.notThat(roque.puedeInscribirseA(objetosII))
+        assert.notThat(sistemaDeInscripcion.puedeInscribirseA(objetosII, roque))
 
-        roque.inscribirACarrera(programacion)
-        assert.that(roque.estaEnMateriasDeCarrerasInscriptas(objetosII))
-        assert.notThat(roque.aprobo(objetosII))
-        assert.notThat(roque.seInscribioAMateria(objetosII))
-        assert.notThat(roque.tieneAprobadasLosRequisitoDe(objetosII))
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
+        assert.that(sistemaDeInscripcion.estaEnMateriasDeCarrerasInscriptas(objetosII, roque))
+        assert.notThat(sistemaDeInscripcion.aprobo(objetosII, roque))
+        assert.notThat(sistemaDeInscripcion.seInscribioAMateria(objetosII, roque))
+        assert.notThat(sistemaDeInscripcion.tieneAprobadasLosRequisitoDe(objetosII, roque))
 
-        roque.aprobar(objetosI, 8)
-        roque.aprobar(matematicaI, 10)
-        assert.that(roque.tieneAprobadasLosRequisitoDe(objetosII))
+        sistemaDeInscripcion.aprobar(objetosI, 8, roque)
+        sistemaDeInscripcion.aprobar(matematicaI, 10, roque)
+        assert.that(sistemaDeInscripcion.tieneAprobadasLosRequisitoDe(objetosII, roque))
     }
 }
