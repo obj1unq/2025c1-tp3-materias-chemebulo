@@ -34,11 +34,11 @@ object sistemaDeInscripcion {
     method puedeInscribirseA(materia, alumno) {
         return self.estaEnMateriasDeCarrerasInscriptas(materia, alumno)
                and not self.aprobo(materia, alumno)
-               and not self.seInscribioAMateria(materia, alumno)
+               and not self.estaInscriptoEnMateria(materia, alumno)
                and self.tieneAprobadasLosRequisitoDe(materia, alumno)
     }
 
-    method seInscribioAMateria(materia, alumno) = alumno.materiasInscriptas().contains(materia)
+    method estaInscriptoEnMateria(materia, alumno) = self.materiasInscriptas(alumno).contains(materia)
 
     method tieneAprobadasLosRequisitoDe(materia, alumno) {
         return materia.requisitos().all({materiaRequisito => self.aprobo(materiaRequisito, alumno)})
@@ -48,19 +48,38 @@ object sistemaDeInscripcion {
         materia.darDeBaja(alumno)
     }
 
+    method alumnosInscriptosEn(materia) = materia.alumnosConfirmados()
+
+    method alumnosEnEsperaEn(materia) = materia.listaDeEspera()
+
+    method materiasInscriptas(alumno) {
+        const todasLasMaterias = self.materiasDeCarrerasInscriptas(alumno)
+        return todasLasMaterias.filter({materia => materia.alumnosConfirmados().contains(alumno)})
+    }
+
+    method materiasEnEspera(alumno) {
+        const todasLasMaterias = self.materiasDeCarrerasInscriptas(alumno)
+        return todasLasMaterias.filter({materia => materia.listaDeEspera().contains(alumno)})
+    }
+
+    method materiasALaQueSePuedeInscribir(alumno) {
+        const todasLasMaterias = self.materiasDeCarrerasInscriptas(alumno)
+        return todasLasMaterias.filter({materia => self.puedeInscribirseA(materia, alumno)})
+    }
+
     // ###################################### INSCRIPCIÓN - CARRERAS #######################################
 
     method inscribirACarrera(carrera, alumno) {
         alumno.carrerasInscriptas().add(carrera)
     }
 
-    method seInscribioACarrera(carrera, alumno) = alumno.carrerasInscriptas().contains(carrera)
+    method estaInscriptoEnCarrera(carrera, alumno) = alumno.carrerasInscriptas().contains(carrera)
 
     method estaEnMateriasDeCarrerasInscriptas(materia, alumno) = self.materiasDeCarrerasInscriptas(alumno).contains(materia)
 
-    method materiasDeCarrerasInscriptas(alumno) = self.materiasDeInscriptas(alumno).flatten()
+    method materiasDeCarrerasInscriptas(alumno) = self.materiasCarrerasDe(alumno).flatten()
 
-    method materiasDeInscriptas(alumno) {
+    method materiasCarrerasDe(alumno) {
         const carrerasInscriptas = alumno.carrerasInscriptas().copy()
         // Mi idea fue no usar directamente la referencia de carrerasInscriptas porque sino me iba a modificar
         // el contenido (lo cual entiendo que está mal en este contexto), y lo que se me ocurrió fue usar una copia.

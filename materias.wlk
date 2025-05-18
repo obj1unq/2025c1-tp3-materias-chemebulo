@@ -17,7 +17,6 @@ class Materia {
 
     method inscribir(alumno) {
         alumnosConfirmados.add(alumno)
-        alumno.materiasInscriptas().add(self)
         cupo -= 1
     }
 
@@ -35,12 +34,13 @@ class Materia {
     }
 
     method hayAlumnosEnListaDeEspera() {
-        return not listaDeEspera.isEmpty()
+        return !listaDeEspera.isEmpty()
     }
 
     method confirmarUnAlumnoDeListaDeEspera() {
-        const alumnoDeListaDeEspera = listaDeEspera.first()
-        alumnosConfirmados.add(alumnoDeListaDeEspera)
+        const alumnoDeListaDeEspera = listaDeEspera.head()
+        listaDeEspera.remove(alumnoDeListaDeEspera)
+        self.inscribir(alumnoDeListaDeEspera)
     }
 }
 

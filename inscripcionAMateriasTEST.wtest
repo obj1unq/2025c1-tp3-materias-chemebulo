@@ -6,6 +6,8 @@ import materias.*
 describe "Inscripciones a materias - Pruebas de los requerimientos" {
 
     const roque = new Alumno()
+    const pepon = new Alumno()
+
     test "1. Registrar una materia aprobada por un estudiante indicando la nota obtenida." {
 
         sistemaDeInscripcion.aprobar(objetosI, 7, roque)
@@ -34,16 +36,17 @@ describe "Inscripciones a materias - Pruebas de los requerimientos" {
     }
 
     test "4. De un estudiante se debería saber la colección de materias de todas las carreras a las que está inscripto." {
+
         const materiasDeProgramacionYMedicina = programacion.materias() + medicina.materias()
 
         sistemaDeInscripcion.inscribirACarrera(programacion, roque)
 
-        assert.that(sistemaDeInscripcion.seInscribioACarrera(programacion, roque))
+        assert.that(sistemaDeInscripcion.estaInscriptoEnCarrera(programacion, roque))
         assert.that(sistemaDeInscripcion.materiasDeCarrerasInscriptas(roque) == programacion.materias())
 
         sistemaDeInscripcion.inscribirACarrera(medicina, roque)
 
-        assert.that(sistemaDeInscripcion.seInscribioACarrera(medicina, roque))
+        assert.that(sistemaDeInscripcion.estaInscriptoEnCarrera(medicina, roque))
         assert.that(sistemaDeInscripcion.materiasDeCarrerasInscriptas(roque) == materiasDeProgramacionYMedicina)
     }
 
@@ -54,7 +57,7 @@ describe "Inscripciones a materias - Pruebas de los requerimientos" {
         sistemaDeInscripcion.inscribirACarrera(programacion, roque)
         assert.that(sistemaDeInscripcion.estaEnMateriasDeCarrerasInscriptas(objetosII, roque))
         assert.notThat(sistemaDeInscripcion.aprobo(objetosII, roque))
-        assert.notThat(sistemaDeInscripcion.seInscribioAMateria(objetosII, roque))
+        assert.notThat(sistemaDeInscripcion.estaInscriptoEnMateria(objetosII, roque))
         assert.notThat(sistemaDeInscripcion.tieneAprobadasLosRequisitoDe(objetosII, roque))
 
         sistemaDeInscripcion.aprobar(objetosI, 8, roque)
@@ -63,11 +66,79 @@ describe "Inscripciones a materias - Pruebas de los requerimientos" {
     }
 
     test "6. Si un estudiante se inscribe a una materia y no cumple con las condiciones, lanza un error; si las cumple y no hay cupo, termina en la lista de espera de la materia, si hay cupo, queda inscripto." {
+        
+        matematicaI.cupo(1)
 
+        assert.throwsException({ sistemaDeInscripcion.inscribirAMateria(objetosII, roque) })
+
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
+        sistemaDeInscripcion.inscribirACarrera(programacion, pepon)
+        sistemaDeInscripcion.inscribirAMateria(matematicaI, roque)
+        sistemaDeInscripcion.inscribirAMateria(matematicaI, pepon)
+
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(matematicaI).contains(roque))
+        assert.that(sistemaDeInscripcion.alumnosEnEsperaEn(matematicaI).contains(pepon))
+    }
+
+    test "7. Se debe poder dar de baja un estudiante de una materia. En caso de haber estudiantes en lista de espera, el primer estudiante de la lista debe obtener su lugar en la materia." {
+        
+        objetosI.cupo(1)
+
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
+        sistemaDeInscripcion.inscribirACarrera(programacion, pepon)
+
+        sistemaDeInscripcion.inscribirAMateria(objetosI, roque)
+        sistemaDeInscripcion.inscribirAMateria(objetosI, pepon)
+
+        assert.that(sistemaDeInscripcion.alumnosEnEsperaEn(objetosI).contains(pepon))
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosI).contains(roque))
+
+        sistemaDeInscripcion.darDeBaja(objetosI, roque)
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosI).contains(pepon))
+        assert.that(sistemaDeInscripcion.alumnosEnEsperaEn(objetosI).isEmpty())
+    }
+
+    test "8. El sistema debe poder brindar los resultados de la inscripción: los estudiantes inscriptos a una materia dada, y los estudiantes en lista de espera para una materia dada." {
+        
+        basesDeDatos.cupo(1)
+
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
+        sistemaDeInscripcion.inscribirACarrera(programacion, pepon)
+        
+        sistemaDeInscripcion.inscribirAMateria(basesDeDatos, roque)
+        sistemaDeInscripcion.inscribirAMateria(basesDeDatos, pepon)
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(basesDeDatos) == [roque])
+        assert.that(sistemaDeInscripcion.alumnosEnEsperaEn(basesDeDatos) == [pepon])
+    }
+
+    test "9. Un estudiante debe saber decir las materias en las que está inscripto y las materias en las que quedó en lista de espera." {
+
+        objetosI.cupo(1)
+
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
+        sistemaDeInscripcion.inscribirACarrera(programacion, pepon)
+
+        sistemaDeInscripcion.inscribirAMateria(objetosI, roque)
+        sistemaDeInscripcion.inscribirAMateria(objetosI, pepon)
+
+        assert.that(sistemaDeInscripcion.materiasEnEspera(roque).isEmpty())
+        assert.that(sistemaDeInscripcion.materiasEnEspera(pepon) == [objetosI])
+
+        assert.that(sistemaDeInscripcion.materiasInscriptas(roque) == [objetosI])
+        assert.that(sistemaDeInscripcion.materiasInscriptas(pepon).isEmpty())
+    }
+ 
+    test "10. Un estudiante debe saber decir todas las materias a las que se puede inscribir." {
+
+        sistemaDeInscripcion.inscribirACarrera(programacion, roque)
+        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI, trabajoFinal])
+
+        sistemaDeInscripcion.aprobar(elementosDeProgramacion, 8, roque)
+        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [matematicaI, basesDeDatos, objetosI, trabajoFinal])
     }
 }
 
-describe "Tests planteados en el final de la consigna" {
+describe "Inscripciones a materias - Tests planteados en el final de la consigna." {
 
     const roque = new Alumno()
     const luisa = new Alumno()
@@ -108,7 +179,7 @@ describe "Tests planteados en el final de la consigna" {
         objetosII.cupo(3)
     }
 
-    test "Prueba general de todo el funcionamiento (entiendo que no son varios test, sino uno solo)." {
+    test "Prueba general de todo el funcionamiento" {
 
         // Roque puede inscribirse en Objetos 2, pero no en Objetos 3 (porque le falta Objetos 2) ni en Objetos 1 (porque ya la tiene aprobada).
 
@@ -123,28 +194,31 @@ describe "Tests planteados en el final de la consigna" {
 
         // Roque puede inscribirse: en Programación, en Objetos 2 y Programación Concurrente; en Medicina, en Biología 2.
 
+        assert.that(sistemaDeInscripcion.puedeInscribirseA(objetosII, roque))
+        assert.that(sistemaDeInscripcion.puedeInscribirseA(programacionConcurrente, roque))
+        assert.that(sistemaDeInscripcion.puedeInscribirseA(biologiaII, roque))
 
 
         // Si se inscriben, en este orden, Luisa, Romina, Alicia y Roque en Objetos 2, entonces las tres primeras quedan confirmadas, y Roque queda en lista de espera. 
     
         sistemaDeInscripcion.inscribirAMateria(objetosII, luisa)
-        assert.that(objetosII.alumnosConfirmados().contains(luisa))
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(luisa))
 
         sistemaDeInscripcion.inscribirAMateria(objetosII, romina)
-        assert.that(objetosII.alumnosConfirmados().contains(romina))
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(romina))
         
         sistemaDeInscripcion.inscribirAMateria(objetosII, alicia)
-        assert.that(objetosII.alumnosConfirmados().contains(alicia))
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(alicia))
         
         sistemaDeInscripcion.inscribirAMateria(objetosII, roque)
-        assert.notThat(objetosII.alumnosConfirmados().contains(roque))
-        assert.that(objetosII.listaDeEspera().contains(roque))
+        assert.notThat(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(roque))
+        assert.that(sistemaDeInscripcion.alumnosEnEsperaEn(objetosII).contains(roque))
 
 
         // Si después se da de baja Romina en Objetos 2, entonces Roque pasa a tener la inscripción confirmada en esa materia.
 
         sistemaDeInscripcion.darDeBaja(objetosII, romina)
-        assert.notThat(objetosII.alumnosConfirmados().contains(romina))
-        assert.that(objetosII.alumnosConfirmados().contains(roque))
+        assert.notThat(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(romina))
+        assert.that(sistemaDeInscripcion.alumnosInscriptosEn(objetosII).contains(roque))
     }
 }
