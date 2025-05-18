@@ -58,11 +58,11 @@ describe "Inscripciones a materias - Pruebas de los requerimientos" {
         assert.that(sistemaDeInscripcion.estaEnMateriasDeCarrerasInscriptas(objetosII, roque))
         assert.notThat(sistemaDeInscripcion.aprobo(objetosII, roque))
         assert.notThat(sistemaDeInscripcion.estaInscriptoEnMateria(objetosII, roque))
-        assert.notThat(sistemaDeInscripcion.tieneAprobadasLosRequisitoDe(objetosII, roque))
+        assert.notThat(sistemaDeInscripcion.cumpleElRequisitoDe(objetosII, roque))
 
         sistemaDeInscripcion.aprobar(objetosI, 8, roque)
         sistemaDeInscripcion.aprobar(matematicaI, 10, roque)
-        assert.that(sistemaDeInscripcion.tieneAprobadasLosRequisitoDe(objetosII, roque))
+        assert.that(sistemaDeInscripcion.cumpleElRequisitoDe(objetosII, roque))
     }
 
     test "6. Si un estudiante se inscribe a una materia y no cumple con las condiciones, lanza un error; si las cumple y no hay cupo, termina en la lista de espera de la materia, si hay cupo, queda inscripto." {
@@ -131,10 +131,10 @@ describe "Inscripciones a materias - Pruebas de los requerimientos" {
     test "10. Un estudiante debe saber decir todas las materias a las que se puede inscribir." {
 
         sistemaDeInscripcion.inscribirACarrera(programacion, roque)
-        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI, trabajoFinal])
+        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI])
 
         sistemaDeInscripcion.aprobar(elementosDeProgramacion, 8, roque)
-        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [matematicaI, basesDeDatos, objetosI, trabajoFinal])
+        assert.that(sistemaDeInscripcion.materiasALaQueSePuedeInscribir(roque) == [matematicaI, basesDeDatos, objetosI])
     }
 }
 

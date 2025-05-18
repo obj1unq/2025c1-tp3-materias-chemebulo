@@ -35,14 +35,12 @@ object sistemaDeInscripcion {
         return self.estaEnMateriasDeCarrerasInscriptas(materia, alumno)
                and not self.aprobo(materia, alumno)
                and not self.estaInscriptoEnMateria(materia, alumno)
-               and self.tieneAprobadasLosRequisitoDe(materia, alumno)
+               and self.cumpleElRequisitoDe(materia, alumno)
     }
 
     method estaInscriptoEnMateria(materia, alumno) = self.materiasInscriptas(alumno).contains(materia)
 
-    method tieneAprobadasLosRequisitoDe(materia, alumno) {
-        return materia.requisitos().all({materiaRequisito => self.aprobo(materiaRequisito, alumno)})
-    }
+    method cumpleElRequisitoDe(materia, alumno) = materia.cumpleElRequisitoParaInscribirse(alumno)
 
     method darDeBaja(materia, alumno) {
         materia.darDeBaja(alumno)
