@@ -28,7 +28,7 @@ object sistemaDeInscripcion {
 
     method inscribirAMateria(materia, alumno) {
         self.validarSiPuedeInscribirseEnMateria(materia, alumno)
-        // INSCRIBIRLO
+        materia.inscribirSiHayCupo(alumno)
     }
 
     method puedeInscribirseA(materia, alumno) {
@@ -36,13 +36,16 @@ object sistemaDeInscripcion {
                and not self.aprobo(materia, alumno)
                and not self.seInscribioAMateria(materia, alumno)
                and self.tieneAprobadasLosRequisitoDe(materia, alumno)
-               and materia.tieneCupo()
     }
 
     method seInscribioAMateria(materia, alumno) = alumno.materiasInscriptas().contains(materia)
 
     method tieneAprobadasLosRequisitoDe(materia, alumno) {
         return materia.requisitos().all({materiaRequisito => self.aprobo(materiaRequisito, alumno)})
+    }
+
+    method darDeBaja(materia, alumno) {
+        materia.darDeBaja(alumno)
     }
 
     // ###################################### INSCRIPCIÓN - CARRERAS #######################################

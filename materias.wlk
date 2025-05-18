@@ -4,186 +4,90 @@ import carreras.*
 
 class Materia {
     const property requisitos = []
-    const alumnos = []
+    const property alumnosConfirmados = []
+    const property listaDeEspera = []
     var property cupo = 20
 
-    method tieneCupo() {
-        return cupo > 0
+    method tieneCupo() = cupo > 0
+
+    method inscribirSiHayCupo(alumno) {
+        if(self.tieneCupo()) { self.inscribir(alumno) } else 
+                             { self.añadirALaListaDeEspera(alumno) }
+    }
+
+    method inscribir(alumno) {
+        alumnosConfirmados.add(alumno)
+        alumno.materiasInscriptas().add(self)
+        cupo -= 1
+    }
+
+    method añadirALaListaDeEspera(alumno) {
+        listaDeEspera.add(alumno)
+    }
+
+    method darDeBaja(alumno) {
+        if(self.hayAlumnosEnListaDeEspera()) {
+            alumnosConfirmados.remove(alumno)
+            self.confirmarUnAlumnoDeListaDeEspera()
+        } else {
+            alumnosConfirmados.remove(alumno)
+        }
+    }
+
+    method hayAlumnosEnListaDeEspera() {
+        return not listaDeEspera.isEmpty()
+    }
+
+    method confirmarUnAlumnoDeListaDeEspera() {
+        const alumnoDeListaDeEspera = listaDeEspera.first()
+        alumnosConfirmados.add(alumnoDeListaDeEspera)
     }
 }
 
 // ####################################### MATERIAS DE PROGRAMACIÓN ########################################
 
-object elementosDeProgramacion inherits Materia {
-    override method requisitos() = []
+object elementosDeProgramacion inherits Materia {}
 
-    method alumnos() = alumnos
+object matematicaI inherits Materia {}
 
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
+object basesDeDatos inherits Materia {}
 
-object matematicaI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object basesDeDatos inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object objetosI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-} 
+object objetosI inherits Materia {} 
 
 object objetosII inherits Materia {
-    override method requisitos() =  [objetosI, matematicaI]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
+    override method requisitos() = [objetosI, matematicaI]
 }
 
 object objetosIII inherits Materia {
     override method requisitos() = [objetosII, basesDeDatos]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
 }
 
 object programacionConcurrente inherits Materia {
     override method requisitos() = [objetosI, basesDeDatos]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
 }
 
-object trabajoFinal inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
+object trabajoFinal inherits Materia {}
 
 // ######################################### MATERIAS DE MEDICINA ##########################################
 
-object quimica inherits Materia {
-    override method requisitos() = []
+object quimica inherits Materia {}
 
-    method alumnos() = alumnos
+object anatomiaGeneral inherits Materia {}
 
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object anatomiaGeneral inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object biologiaI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
+object biologiaI inherits Materia {}
 
 object biologiaII inherits Materia {
     override method requisitos() = [biologiaI]
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
 }
 
 // ########################################## MATERIAS DE DERECHO ##########################################
 
-object latin inherits Materia {
-    override method requisitos() = []
+object latin inherits Materia {}
 
-    method alumnos() = alumnos
+object derechoRomano inherits Materia {} 
 
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
+object historiaDeDerechoArgentino inherits Materia {}
 
-object derechoRomano inherits Materia {
-    override method requisitos() = []
+object derechoPenalI inherits Materia {} 
 
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-} 
-
-object historiaDeDerechoArgentino inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
-
-object derechoPenalI inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-} 
-
-object derechoPenalII inherits Materia {
-    override method requisitos() = []
-
-    method alumnos() = alumnos
-
-    method inscribir(alumno) {
-        alumnos.add(alumno)
-    }
-}
+object derechoPenalII inherits Materia {}
