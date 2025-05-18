@@ -1,0 +1,61 @@
+import inscripcionAMaterias.*
+
+describe "Inscripciones a materias - Pruebas de los requerimientos" {
+
+    const roque = new Alumno()
+    test "1. Registrar una materia aprobada por un estudiante indicando la nota obtenida." {
+
+        roque.aprobar(objetosI, 7)
+        assert.that(roque.aprobo(objetosI))
+        assert.equals(7, roque.nota(objetosI))
+    }
+
+    test "2. De un estudiante se debería saber la cantidad de materias aprobadas, su promedio, y si tiene o no aprobada una materia." {
+
+        assert.equals(0, roque.cantidadDeMateriasAprobadas())
+        roque.aprobar(objetosI, 8)
+        roque.aprobar(matematicaI, 6)
+
+        assert.equals(2, roque.cantidadDeMateriasAprobadas())
+        assert.equals(7, roque.promedio())
+
+        assert.that(roque.aprobo(objetosI))
+        assert.notThat(roque.aprobo(objetosII))
+    }
+
+    test "3. Si el estudiante ya tiene registrada la aprobación de la materia, lanza un error." {
+
+        roque.aprobar(objetosI, 8)
+        assert.throwsException({ roque.aprobar(objetosI, 9) })
+        assert.doesNotThrowException({ roque.aprobar(matematicaI, 10) })
+    }
+
+    test "4. De un estudiante se debería saber la colección de materias de todas las carreras a las que está inscripto." {
+        const materiasDeProgramacionYMedicina = programacion.materias() + medicina.materias()
+
+        roque.inscribirACarrera(programacion)
+
+        assert.that(roque.seInscribioACarrera(programacion))
+        assert.that(roque.materiasDeCarrerasInscriptas() == programacion.materias())
+
+        roque.inscribirACarrera(medicina)
+
+        assert.that(roque.seInscribioACarrera(medicina))
+        assert.that(roque.materiasDeCarrerasInscriptas() == materiasDeProgramacionYMedicina)
+    }
+
+    test "5. Un estudiante debería poder inscribirse a una materia en base a las cuatro condiciones planteadas en la consigna." {
+
+        assert.notThat(roque.puedeInscribirseA(objetosII))
+
+        roque.inscribirACarrera(programacion)
+        assert.that(roque.estaEnMateriasDeCarrerasInscriptas(objetosII))
+        assert.notThat(roque.aprobo(objetosII))
+        assert.notThat(roque.seInscribioAMateria(objetosII))
+        assert.notThat(roque.tieneAprobadasLosRequisitoDe(objetosII))
+
+        roque.aprobar(objetosI, 8)
+        roque.aprobar(matematicaI, 10)
+        assert.that(roque.tieneAprobadasLosRequisitoDe(objetosII))
+    }
+}
