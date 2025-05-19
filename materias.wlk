@@ -1,4 +1,4 @@
-import inscripcionAMaterias.*
+import universidad.*
 import alumno.*
 import carreras.*
 
@@ -6,223 +6,151 @@ class Materia {
     const property correlativas = []
     const property alumnosConfirmados = []
     const property listaDeEspera = []
-    var property cupo = 20
-    var property año = 1
+    var property nombre
+    var property cupo = 15
+    var property año
     var property creditos = 15
+    var property requisito
     var property estrategia = ordenDeLlegada
-    var property carrera = ninguna
- 
-    method tieneCupo() = cupo > 0
+    var property creditosParaInscribirse = 0
+
+    method inscribirALaMateria(alumno) {
+        self.validarSiPuedeInscribirse(alumno)
+        self.inscribirSiHayCupo(alumno)
+    }
 
     method inscribirSiHayCupo(alumno) {
-        if(self.tieneCupo()) { self.inscribir(alumno) } else 
-                             { self.añadirALaListaDeEspera(alumno) }
-    }
-
-    method inscribir(alumno) {
-        self.añadirAlumnoAConfirmados(alumno)
-        cupo -= 1
-    }
-
-    method añadirALaListaDeEspera(alumno) {
-        listaDeEspera.add(alumno)
+        if(self.tieneCupo()) { 
+            alumnosConfirmados.add(alumno)
+            cupo -= 1
+        } else { 
+            listaDeEspera.add(alumno) 
+        }
     }
 
     method darDeBaja(alumno) {
         if(self.hayAlumnosEnListaDeEspera()) {
-            self.quitarAlumnoDeConfirmados(alumno)
-            estrategia.confirmarUnAlumnoDeListaDeEspera(self)
+            alumnosConfirmados.remove(alumno)
+            self.confirmarUnAlumnoDeListaDeEspera()
         } else {
-            self.quitarAlumnoDeConfirmados(alumno)
+            alumnosConfirmados.remove(alumno)
+            cupo += 1
         }
     }
 
-    method añadirAlumnoAConfirmados(alumno) {
+    method confirmarUnAlumnoDeListaDeEspera() {
+        const alumno = estrategia.alumnoDeterminadoPorLaEstrategia(self)
+        listaDeEspera.remove(alumno)
         alumnosConfirmados.add(alumno)
     }
 
-    method quitarAlumnoDeConfirmados(alumno) {
-        alumnosConfirmados.remove(alumno)
-    }
-
-
-    method hayAlumnosEnListaDeEspera() {
-        return !listaDeEspera.isEmpty()
-    }
-
     method cumpleElRequisitoParaInscribirse(alumno) {
-        return true
+        return requisito.cumpleElRequisitoParaInscribirse(alumno, self)
+    }
+
+    // ########################################### VALIDACIONES ############################################
+
+    method validarSiPuedeInscribirse(alumno) {
+        if(not alumno.puedeInscribirseA(self)) {
+            self.error("El alumno no se puede inscribir a esta materia, no cumple con las condiciones.")
+        } 
+    }
+
+    // ############################################ AUXILIARES #############################################
+
+    method tieneCupo() = cupo > 0
+
+    method estaInscripto(alumno) = alumnosConfirmados.contains(alumno)
+
+    method estaEnListaDeEspera(alumno) = listaDeEspera.contains(alumno)
+
+    method esDelAño(añoAConsultar) {
+        return año == añoAConsultar
+    }
+
+    method hayAlumnosEnListaDeEspera() = !listaDeEspera.isEmpty()
+
+    method carrera() {
+        return universidad.carreraDeMateria(self)
     }
 }
 
 // ############################ ESTRATEGIAS PARA ADMINISTRAR LA LISTA DE ESPERA ############################
 
 object ordenDeLlegada {
-
-    method confirmarUnAlumnoDeListaDeEspera(materia) {
+    method alumnoDeterminadoPorLaEstrategia(materia) {
         const alumnoDeListaDeEspera = materia.listaDeEspera().head()
-
-        materia.listaDeEspera().remove(alumnoDeListaDeEspera)
-        materia.inscribir(alumnoDeListaDeEspera)
+        return alumnoDeListaDeEspera
     }
 }
 
 object elitista {
-
-    method confirmarUnAlumnoDeListaDeEspera(materia) {
+    method alumnoDeterminadoPorLaEstrategia(materia) {
         const listaDeEspera = materia.listaDeEspera()
-        const mejorPromedio = listaDeEspera.max({alumno => sistemaDeInscripcion.promedio(alumno)})
-        
-        listaDeEspera.remove(mejorPromedio)
-        materia.inscribir(mejorPromedio)
+        const mejorPromedio = listaDeEspera.max({alumno => alumno.promedio()})
+        return mejorPromedio
     }
 }
 
 object gradoDeAvance {
-
-    method confirmarUnAlumnoDeListaDeEspera(materia) {
+    method alumnoDeterminadoPorLaEstrategia(materia) {
         const listaDeEspera = materia.listaDeEspera()
         const carreraDeMateria = materia.carrera()
-        const masAvanzado = listaDeEspera.max({alumno => sistemaDeInscripcion.cantidadDeAprobadasEnCarrera(alumno, carreraDeMateria)})
-        
-        listaDeEspera.remove(masAvanzado)
-        materia.inscribir(masAvanzado)
+        const masAvanzado = listaDeEspera.max({alumno => carreraDeMateria.cantidadDeAprobadasEnCarrera(alumno)})
+        return masAvanzado
+    }
+}
+
+// ############################### REQUISITOS DE INSCRIPCION DE LAS MATERIAS ###############################
+
+object porAño {
+    method cumpleElRequisitoParaInscribirse(alumno, materia) {
+        const carrera = materia.carrera()
+        const añoAVerificar = materia.año() - 1
+        const materiasDelAño = carrera.materiasDelAñoEn(añoAVerificar)
+
+        return materiasDelAño.all({materia => alumno.aprobo(materia)})
+    }
+}
+
+object porCreditos {
+    method cumpleElRequisitoParaInscribirse(alumno, materia) {
+        return alumno.creditos() >= materia.creditos()
+    }
+}
+
+object porNada {
+    method cumpleElRequisitoParaInscribirse(alumno, materia) {
+        return true
     }
 }
 
 // ####################################### MATERIAS DE PROGRAMACIÓN ########################################
 
-object elementosDeProgramacion inherits Materia {
-    override method carrera() = programacion
-}
+const elementosDeProgramacion = new Materia(nombre = "Elementos De Programacion", correlativas = [], año = 1, requisito = porNada)
+const matematicaI  = new Materia(nombre = "Matematica I", correlativas = [], año = 1, requisito = porNada)
+const basesDeDatos = new Materia(nombre = "Bases de Datos", correlativas = [], año = 1, requisito = porNada)
+const objetosI     = new Materia(nombre = "Objetos I", correlativas = [], año = 1, requisito = porNada)
 
-object matematicaI inherits Materia {
-    override method carrera() = programacion
-}
+const programacionConcurrente = new Materia(nombre = "Programacion Concurrente", correlativas = [objetosI, basesDeDatos], año = 2, creditos = 30, requisito = porAño)
+const objetosII    = new Materia(nombre = "Objetos II", correlativas = [objetosI, matematicaI], año = 2, creditos = 30, requisito = porAño)
 
-object basesDeDatos inherits Materia {
-    override method carrera() = programacion
-}
-
-object objetosI inherits Materia {
-    override method carrera() = programacion
-} 
-
-object objetosII inherits Materia {
-    override method carrera() = programacion
-    override method creditos() = 30
-    override method año() = 2
-
-    override method correlativas() = [objetosI, matematicaI]
-
-    override method cumpleElRequisitoParaInscribirse(alumno) {
-        const materiasDelAñoPasado = sistemaDeInscripcion.materiasDelAñoEn(1, carrera)
-
-        return materiasDelAñoPasado.all({materia => sistemaDeInscripcion.aprobo(materia, alumno)})
-    }
-}
-
-object programacionConcurrente inherits Materia {
-    override method carrera() = programacion
-    override method creditos() = 30
-    override method año() = 2
-
-    override method correlativas() = [objetosI, basesDeDatos]
-
-    override method cumpleElRequisitoParaInscribirse(alumno) {
-        const materiasDelAñoPasado = sistemaDeInscripcion.materiasDelAñoEn(1, carrera)
-
-        return materiasDelAñoPasado.all({materia => sistemaDeInscripcion.aprobo(materia, alumno)})
-    }
-}
-
-object objetosIII inherits Materia {
-    override method carrera() = programacion
-    override method creditos() = 60
-    override method año() = 3
-
-    override method correlativas() = [objetosII, basesDeDatos]
-
-    override method cumpleElRequisitoParaInscribirse(alumno) {
-        const materiasDelAñoPasado = sistemaDeInscripcion.materiasDelAñoEn(2, carrera)
-
-        return materiasDelAñoPasado.all({materia => sistemaDeInscripcion.aprobo(materia, alumno)})
-    }
-}
-
-object trabajoFinal inherits Materia {
-    override method carrera() = programacion
-    override method creditos() = 120
-    override method año() = 4
-
-    override method cumpleElRequisitoParaInscribirse(alumno) {
-        const materiasDelAñoPasado = sistemaDeInscripcion.materiasDelAñoEn(1, carrera)
-        const aproboLasDelAñoPasado = materiasDelAñoPasado.all({materia => sistemaDeInscripcion.aprobo(materia, alumno)})
-
-        return alumno.creditos() >= 250 && aproboLasDelAñoPasado
-    }
-}
+const objetosIII   = new Materia(nombre = "Objetos III", correlativas = [objetosII, basesDeDatos], año = 3, creditos = 60, requisito = porAño)
+const trabajoFinal = new Materia(nombre = "Trabajo Final", correlativas = [], año = 4, creditos = 120, requisito = porCreditos, creditosParaInscribirse = 250)
 
 // ######################################### MATERIAS DE MEDICINA ##########################################
 
-object quimica inherits Materia {
-    override method carrera() = medicina
-}
+const quimica         = new Materia(nombre = "Quimica", correlativas = [programacion], año = 1, requisito = porNada)
+const anatomiaGeneral = new Materia(nombre = "Anatomia General", correlativas = [programacion], año = 1, requisito = porNada)
+const biologiaI       = new Materia(nombre = "Biologia I", correlativas = [programacion], año = 1, requisito = porNada)
 
-object anatomiaGeneral inherits Materia {
-    override method carrera() = medicina
-}
-
-object biologiaI inherits Materia {
-    override method carrera() = medicina
-}
-
-object biologiaII inherits Materia {
-    override method carrera() = medicina
-    override method creditos() = 30
-    override method año() = 2
-
-    override method correlativas() = [biologiaI]
-
-    override method cumpleElRequisitoParaInscribirse(alumno) {
-        const materiasDelAñoPasado = sistemaDeInscripcion.materiasDelAñoEn(1, carrera)
-
-        return materiasDelAñoPasado.all({materia => sistemaDeInscripcion.aprobo(materia, alumno)})
-    }
-}
+const biologiaII      = new Materia(nombre = "Biologia II", correlativas = [biologiaI], año = 2, creditos = 30, requisito = porAño)
 
 // ########################################## MATERIAS DE DERECHO ##########################################
 
-object latin inherits Materia {
-    override method carrera() = derecho
-}
+const latin          = new Materia(nombre = "Latin", correlativas = [], año = 1, requisito = porNada)
+const derechoRomano  = new Materia(nombre = "Derecho Romano", correlativas = [], año = 1, requisito = porNada)
+const derechoPenalI  = new Materia(nombre = "Derecho Penal I", correlativas = [], año = 1, requisito = porNada)
+const historiaDeDerechoArgentino = new Materia(nombre = "Historia de Derecho Argentino", correlativas = [], año = 1, requisito = porNada)
 
-object derechoRomano inherits Materia {
-    override method carrera() = derecho
-} 
-
-object historiaDeDerechoArgentino inherits Materia {
-    override method carrera() = derecho
-}
-
-object derechoPenalI inherits Materia {
-    override method carrera() = derecho
-    override method creditos() = 30
-    override method año() = 2
-    override method cumpleElRequisitoParaInscribirse(alumno) {
-        const materiasDelAñoPasado = sistemaDeInscripcion.materiasDelAñoEn(1, carrera)
-
-        return materiasDelAñoPasado.all({materia => sistemaDeInscripcion.aprobo(materia, alumno)})
-    }
-} 
-
-object derechoPenalII inherits Materia {
-    override method carrera() = derecho
-    override method creditos() = 60
-    override method año() = 3
-    override method cumpleElRequisitoParaInscribirse(alumno) {
-        const materiasDelAñoPasado = sistemaDeInscripcion.materiasDelAñoEn(2, carrera)
-
-        return materiasDelAñoPasado.all({materia => sistemaDeInscripcion.aprobo(materia, alumno)})
-    }
-}
+const derechoPenalII = new Materia(nombre = "Derecho Penal II", correlativas = [derechoPenalI], año = 2, creditos = 30, requisito = porAño)

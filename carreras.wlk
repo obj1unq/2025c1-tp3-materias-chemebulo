@@ -1,26 +1,24 @@
-import inscripcionAMaterias.*
 import materias.*
+import universidad.*
+import alumno.*
 
 class Carrera {
-    var property materias = []
-}
+    const property materias = []
 
-object programacion inherits Carrera {
-    override method materias(){
-        return [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI, objetosII, programacionConcurrente, trabajoFinal]
+    method cantidadDeAprobadasEnCarrera(alumno) {
+        const materiasAprobadas = materias.filter({materia => alumno.aprobo(materia)})
+        return materiasAprobadas.size()
     }
-}
 
-object medicina inherits Carrera {
-    override method materias(){
-        return [quimica, anatomiaGeneral, biologiaI, biologiaII]
+    method materiasDelAñoEn(año) {
+        return materias.filter({materia => materia.esDelAño(año)})
     }
+
+    method tieneLaMateria(materiaABuscar) = materias.any({materia => materia.nombre() == materiaABuscar.nombre()})
 }
 
-object derecho inherits Carrera {
-    override method materias(){
-        return [latin, derechoRomano, historiaDeDerechoArgentino, derechoPenalI, derechoPenalII]
-    }
-}
+const programacion = new Carrera(materias = [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI, objetosII, programacionConcurrente, trabajoFinal])
 
-object ninguna inherits Carrera {}
+const medicina = new Carrera(materias = [quimica, anatomiaGeneral, biologiaI, biologiaII])
+
+const derecho = new Carrera(materias = [latin, derechoRomano, historiaDeDerechoArgentino, derechoPenalI, derechoPenalII])
