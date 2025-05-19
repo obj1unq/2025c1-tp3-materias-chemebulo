@@ -1,0 +1,303 @@
+import alumno.*
+import carreras.*
+import materias.*
+import universidad.*
+
+describe "Inscripciones a materias - Pruebas de los requerimientos" {
+
+    const roque = new Alumno()
+    const pepon = new Alumno()
+
+    test "1. Registrar una materia aprobada por un estudiante indicando la nota obtenida." {
+
+        universidad.aprobar(objetosI, 7, roque)
+        assert.that(roque.aprobo(objetosI))
+        assert.equals(7, roque.notaEn(objetosI))
+    }
+
+    test "2. De un estudiante se debería saber la cantidad de materias aprobadas, su promedio, y si tiene o no aprobada una materia." {
+
+        assert.equals(0, roque.cantidadDeMateriasAprobadas())
+        universidad.aprobar(objetosI, 8, roque)
+        universidad.aprobar(matematicaI, 6, roque)
+
+        assert.equals(2, roque.cantidadDeMateriasAprobadas())
+        assert.equals(7, roque.promedio())
+
+        assert.that(roque.aprobo(objetosI))
+        assert.notThat(roque.aprobo(objetosII))
+    }
+
+    test "3. Si el estudiante ya tiene registrada la aprobación de la materia, lanza un error." {
+
+        universidad.aprobar(objetosI, 8, roque)
+        assert.throwsException({ universidad.aprobar(objetosI, 9, roque) })
+        assert.doesNotThrowException({ universidad.aprobar(matematicaI, 10, roque) })
+    }
+
+    test "4. De un estudiante se debería saber la colección de materias de todas las carreras a las que está inscripto." {
+
+        const materiasDeProgramacionYMedicina = programacion.materias() + medicina.materias()
+
+        universidad.inscribirACarrera(programacion, roque)
+
+        assert.that(roque.estaInscriptoEnCarrera(programacion))
+        assert.that(roque.materiasDeCarrerasInscriptas() == programacion.materias())
+
+        universidad.inscribirACarrera(medicina, roque)
+
+        assert.that(roque.estaInscriptoEnCarrera(medicina))
+        assert.that(roque.materiasDeCarrerasInscriptas() == materiasDeProgramacionYMedicina)
+    }
+
+    test "5. Un estudiante debería poder inscribirse a una materia en base a las cuatro condiciones planteadas en la consigna." {
+
+        assert.notThat(roque.puedeInscribirseA(objetosII))
+
+        universidad.inscribirACarrera(programacion, roque)
+        assert.that(roque.estaEnLasDeCarrerasInscriptas(objetosII))
+        assert.notThat(roque.aprobo(objetosII))
+        assert.notThat(roque.estaInscriptoEnMateria(objetosII))
+
+        universidad.aprobar(objetosI, 8, roque)
+        universidad.aprobar(matematicaI, 10, roque)
+        universidad.aprobar(elementosDeProgramacion, 6, roque)
+        universidad.aprobar(basesDeDatos, 9, roque)
+        assert.that(roque.cumpleElRequisitoDe(objetosII))
+    }
+
+    test "6. Si un estudiante se inscribe a una materia y no cumple con las condiciones, lanza un error; si las cumple y no hay cupo, termina en la lista de espera de la materia, si hay cupo, queda inscripto." {
+        
+        matematicaI.cupo(1)
+
+        assert.throwsException({ universidad.inscribirAMateria(objetosII, roque) })
+
+        universidad.inscribirACarrera(programacion, roque)
+        universidad.inscribirACarrera(programacion, pepon)
+        universidad.inscribirAMateria(matematicaI, roque)
+        universidad.inscribirAMateria(matematicaI, pepon)
+
+        assert.that(matematicaI.estaInscripto(roque))
+        assert.that(matematicaI.estaEnListaDeEspera(pepon))
+    }
+
+    test "7. Se debe poder dar de baja un estudiante de una materia. En caso de haber estudiantes en lista de espera, el primer estudiante de la lista debe obtener su lugar en la materia." {
+        
+        objetosI.cupo(1)
+
+        universidad.inscribirACarrera(programacion, roque)
+        universidad.inscribirACarrera(programacion, pepon)
+
+        universidad.inscribirAMateria(objetosI, roque)
+        universidad.inscribirAMateria(objetosI, pepon)
+
+        assert.that(objetosI.estaEnListaDeEspera(pepon))
+        assert.that(objetosI.estaInscripto(roque))
+
+        universidad.darDeBajaEnMateria(objetosI, roque)
+        assert.that(objetosI.estaInscripto(pepon))
+        assert.notThat(objetosI.hayAlumnosEnListaDeEspera())
+    }
+
+    test "8. El sistema debe poder brindar los resultados de la inscripción: los estudiantes inscriptos a una materia dada, y los estudiantes en lista de espera para una materia dada." {
+        
+        basesDeDatos.cupo(1)
+
+        universidad.inscribirACarrera(programacion, roque)
+        universidad.inscribirACarrera(programacion, pepon)
+        
+        universidad.inscribirAMateria(basesDeDatos, roque)
+        universidad.inscribirAMateria(basesDeDatos, pepon)
+        assert.that(basesDeDatos.estaInscripto(roque))
+        assert.that(basesDeDatos.estaEnListaDeEspera(pepon))
+    }
+
+    test "9. Un estudiante debe saber decir las materias en las que está inscripto y las materias en las que quedó en lista de espera." {
+
+        objetosI.cupo(1)
+
+        universidad.inscribirACarrera(programacion, roque)
+        universidad.inscribirACarrera(programacion, pepon)
+
+        universidad.inscribirAMateria(objetosI, roque)
+        universidad.inscribirAMateria(objetosI, pepon)
+
+        assert.that(roque.materiasEnEspera().isEmpty())
+        assert.that(objetosI.estaEnListaDeEspera(pepon))
+
+        assert.that(objetosI.estaInscripto(roque))
+        assert.that(pepon.materiasInscriptas().isEmpty())
+    }
+ 
+    test "10. Un estudiante debe saber decir todas las materias a las que se puede inscribir." {
+
+        const materiasQueSePuedeInscribir = roque.materiasALaQueSePuedeInscribir()
+        const materiasQueDeberiaPoderInscribirse = [elementosDeProgramacion, matematicaI, basesDeDatos, objetosI]
+
+        universidad.inscribirACarrera(programacion, roque)
+        assert.that(materiasQueSePuedeInscribir.all({materia => materiasQueDeberiaPoderInscribirse.contains(materia)}))
+
+        universidad.aprobar(elementosDeProgramacion, 8, roque)
+        assert.notThat(roque.materiasALaQueSePuedeInscribir().contains(elementosDeProgramacion))
+    }
+}
+
+describe "Inscripciones a materias - Tests planteados en el final de la consigna." {
+
+    const roque = new Alumno()
+    const luisa = new Alumno()
+    const romina = new Alumno()
+    const alicia = new Alumno()
+    const ana = new Alumno()
+
+    method initialize() {
+
+        universidad.inscribirACarrera(programacion, roque)
+        universidad.inscribirACarrera(medicina, roque)
+        universidad.inscribirACarrera(programacion, luisa)
+        universidad.inscribirACarrera(programacion, romina)
+        universidad.inscribirACarrera(programacion, alicia)
+        universidad.inscribirACarrera(programacion, ana)
+
+        universidad.aprobar(elementosDeProgramacion, 8, roque)
+        universidad.aprobar(matematicaI, 9, roque)
+        universidad.aprobar(objetosI, 7, roque)
+        universidad.aprobar(basesDeDatos, 9, roque)
+        universidad.aprobar(quimica, 7, roque)
+        universidad.aprobar(biologiaI, 8, roque)
+
+        universidad.aprobar(elementosDeProgramacion, 7, luisa)
+        universidad.aprobar(objetosI, 7, luisa)
+        universidad.aprobar(matematicaI, 6, luisa)
+
+        universidad.aprobar(elementosDeProgramacion, 8, romina)
+        universidad.aprobar(objetosI, 7, romina)
+        universidad.aprobar(matematicaI, 7, romina)
+
+        universidad.aprobar(elementosDeProgramacion, 7, alicia)
+        universidad.aprobar(objetosI, 6, alicia)
+        universidad.aprobar(matematicaI, 6, alicia)
+
+        universidad.aprobar(elementosDeProgramacion, 9, ana)
+
+        objetosII.cupo(3)
+    }
+
+    test "Funcionamiento general del sistema de inscripción." {
+
+        // Roque puede inscribirse en Objetos 2, pero no en Objetos 3 (porque le falta Objetos 2) ni en Objetos 1 (porque ya la tiene aprobada).
+
+        assert.that(roque.puedeInscribirseA(objetosII))
+
+        assert.notThat(roque.aprobo(objetosII))
+        assert.notThat(roque.puedeInscribirseA(objetosIII))
+
+        assert.that(roque.aprobo(objetosI))
+        assert.notThat(roque.puedeInscribirseA(objetosI))
+
+
+        // Roque puede inscribirse: en Programación, en Objetos 2 y Programación Concurrente; en Medicina, en Biología 2.
+
+        universidad.aprobar(anatomiaGeneral, 9, roque) // Esto lo hice porque Roque necesita aprobar todo el primer año para inscribirse en Biologia II.
+                                                       // Antes de haber hecho el bonus esto funcionaba sin necesidad de este paso.
+        assert.that(roque.puedeInscribirseA(objetosII))
+        assert.that(roque.puedeInscribirseA(programacionConcurrente))
+        assert.that(roque.puedeInscribirseA(biologiaII)) 
+
+        // Si se inscriben, en este orden, Luisa, Romina, Alicia y Roque en Objetos 2, entonces las tres primeras quedan confirmadas, y Roque queda en lista de espera. 
+        
+        universidad.aprobar(basesDeDatos, 8, luisa)  // Esto lo hice porque necesitan aprobar todo el primer año para inscribirse en Objetos 2.
+        universidad.aprobar(basesDeDatos, 9, romina) // Antes de haber hecho el bonus esto funcionaba sin necesidad de este paso.
+        universidad.aprobar(basesDeDatos, 7, alicia)
+
+        universidad.inscribirAMateria(objetosII, luisa)
+        assert.that(objetosII.estaInscripto(luisa))
+
+        universidad.inscribirAMateria(objetosII, romina)
+        assert.that(objetosII.estaInscripto(romina))
+        
+        universidad.inscribirAMateria(objetosII, alicia)
+        assert.that(objetosII.estaInscripto(alicia))
+        
+        universidad.inscribirAMateria(objetosII, roque)
+        assert.notThat(objetosII.estaInscripto(roque))
+        assert.that(objetosII.estaEnListaDeEspera(roque))
+
+
+        // Si después se da de baja Romina en Objetos 2, entonces Roque pasa a tener la inscripción confirmada en esa materia.
+
+        universidad.darDeBajaEnMateria(objetosII, romina)
+        assert.notThat(objetosII.estaInscripto(romina))
+        assert.that(objetosII.estaInscripto(roque))
+        assert.notThat(objetosII.estaEnListaDeEspera(roque))
+    }
+}
+
+describe "Implementación del bonus" {
+
+    const roque = new Alumno()
+    const pepon = new Alumno()
+    const jorge = new Alumno()
+
+    method initialize() {
+        universidad.inscribirACarrera(programacion, roque)
+        universidad.inscribirACarrera(programacion, pepon)
+        universidad.inscribirACarrera(programacion, jorge)
+
+        universidad.aprobar(elementosDeProgramacion, 9, roque)
+        universidad.aprobar(matematicaI, 10, roque)
+        universidad.aprobar(basesDeDatos, 10, roque)
+
+        universidad.aprobar(basesDeDatos, 8, pepon)
+
+        universidad.aprobar(elementosDeProgramacion, 10, jorge)
+        universidad.aprobar(basesDeDatos, 8, jorge)
+
+        objetosI.cupo(1)
+    }
+
+    test "La materias tienen sus requisitos propios: por cantidad de créditos, por año, o ninguno."{
+        
+        assert.that(roque.cumpleElRequisitoDe(objetosI))
+        assert.notThat(roque.cumpleElRequisitoDe(trabajoFinal))
+        assert.equals(porNada, objetosI.requisito())
+        assert.equals(porAño, objetosII.requisito())
+        assert.equals(porCreditos, trabajoFinal.requisito())
+    }
+
+    test "Las materias tienen diferentes maneras de manejar su lista de espera: orden de llegada." {
+
+        universidad.inscribirAMateria(objetosI, pepon)
+        universidad.inscribirAMateria(objetosI, roque)
+        assert.that(objetosI.estaInscripto(pepon))
+        assert.notThat(objetosI.estaInscripto(roque))
+        assert.that(objetosI.estaEnListaDeEspera(roque))
+    }
+
+
+    test "Las materias tienen diferentes maneras de manejar su lista de espera: elitista." {
+
+        objetosI.estrategia(elitista)
+
+        universidad.inscribirAMateria(objetosI, roque)
+        universidad.inscribirAMateria(objetosI, pepon)
+        universidad.inscribirAMateria(objetosI, jorge)
+        universidad.darDeBajaEnMateria(objetosI, roque)
+        assert.that(objetosI.estaInscripto(jorge))
+        assert.notThat(objetosI.estaEnListaDeEspera(jorge))
+        assert.that(objetosI.estaEnListaDeEspera(pepon))
+    }
+
+    test "Las materias tienen diferentes maneras de manejar su lista de espera: grado de avance." {
+
+        objetosI.estrategia(gradoDeAvance)
+
+        universidad.inscribirAMateria(objetosI, jorge)
+        universidad.inscribirAMateria(objetosI, pepon)
+        universidad.inscribirAMateria(objetosI, roque)
+        universidad.darDeBajaEnMateria(objetosI, jorge)
+        assert.that(objetosI.estaInscripto(roque))
+        assert.notThat(objetosI.estaEnListaDeEspera(roque))
+        assert.that(objetosI.estaEnListaDeEspera(pepon))
+    }
+}
